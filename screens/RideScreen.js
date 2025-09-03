@@ -5,6 +5,7 @@ import { saveRide } from "../utils/storage";
 
 export default function RideScreen() {
   const [isRiding, setIsRiding] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [distance, setDistance] = useState(0);
   const [time, setTime] = useState(0);
   const [startTime, setStartTime] = useState(null);
@@ -26,6 +27,24 @@ export default function RideScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (isRiding && !isPaused) {
+      timerRef.current = setInterval(() => {
+        setTime((t) => t + 1);
+      }, 1000);
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isRiding, isPaused]);
+
   const startRide = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
@@ -38,23 +57,29 @@ export default function RideScreen() {
     setDistance(0);
     setTime(0);
     lastCoordsRef.current = null;
-
-    timerRef.current = setInterval(() => {
-      setTime((t) => t + 1);
-    }, 1000);
+    setIsPaused(false);
 
     watchSubscriptionRef.current = await Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.Balanced,
         timeInterval: 1000,
-        distanceInterval: 5,
+        distanceInterval: 3,
       },
       (position) => {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy } = position.coords;
+        if (!isRiding || isPaused) {
+          return;
+        }
+        // Ignore low-accuracy readings (>25m)
+        if (typeof accuracy === "number" && accuracy > 25) {
+          return;
+        }
         const previous = lastCoordsRef.current;
         if (previous) {
           const deltaKm = haversineDistanceKm(previous, { latitude, longitude });
-          if (deltaKm > 0) {
+          const deltaMeters = deltaKm * 1000;
+          // Ignore tiny jumps under 5m to reduce jitter
+          if (deltaMeters >= 5) {
             setDistance((d) => d + deltaKm);
           }
         }
@@ -63,8 +88,19 @@ export default function RideScreen() {
     );
   };
 
+  const pauseRide = () => {
+    if (!isRiding) return;
+    setIsPaused(true);
+  };
+
+  const resumeRide = () => {
+    if (!isRiding) return;
+    setIsPaused(false);
+  };
+
   const stopRide = async () => {
     setIsRiding(false);
+    setIsPaused(false);
 
     if (watchSubscriptionRef.current) {
       watchSubscriptionRef.current.remove();
@@ -94,7 +130,14 @@ export default function RideScreen() {
       {!isRiding ? (
         <Button title="Start Ride" onPress={startRide} />
       ) : (
-        <Button title="Stop Ride" onPress={stopRide} />
+        <View style={{ gap: 8 }}>
+          {!isPaused ? (
+            <Button title="Pause" onPress={pauseRide} />
+          ) : (
+            <Button title="Resume" onPress={resumeRide} />
+          )}
+          <Button title="Stop Ride" onPress={stopRide} />
+        </View>
       )}
     </View>
   );
