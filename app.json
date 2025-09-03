@@ -16,11 +16,13 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.nickdanilch.crankfi",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We use your location to track rides and reward tokens."
       }
     },
     "android": {
+      "package": "com.nickdanilch.crankfi",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
