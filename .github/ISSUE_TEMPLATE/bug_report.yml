@@ -1,0 +1,12 @@
+name: Bug report
+about: Create a report to help us improve
+title: '[Bug]: ' 
+labels: bug
+assignees: ''
+body:
+  - type: textarea
+    id: bug
+    attributes:
+      label: Describe the bug
+    validations:
+      required: true

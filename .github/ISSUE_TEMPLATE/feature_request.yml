@@ -1,0 +1,12 @@
+name: Feature request
+about: Suggest an idea for this project
+title: '[Feature]: ' 
+labels: enhancement
+assignees: ''
+body:
+  - type: textarea
+    id: feature
+    attributes:
+      label: Describe the feature
+    validations:
+      required: true
