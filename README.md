@@ -1,4 +1,4 @@
-# RideToEarn
+# CrankFi
 
 React Native/Expo app for tracking rides and earning tokens.
 
